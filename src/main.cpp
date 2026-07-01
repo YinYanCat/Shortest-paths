@@ -1,43 +1,100 @@
 #include <vector>
 #include <cstdio>
 #include <limits>
+#include <fstream>
+#include <string>
+#include <iostream>
+#include <sstream>
 
 using namespace std;
 
-std::vector<std::vector<float>> convertToMatrix(const char * name_file, int *size) {
+vector<vector<float>> convertToMatrix(const char * name_file, int *size) {
+    ifstream f(name_file);
 
-    FILE* f = std::fopen(name_file, "r");
+    vector<vector<float>> matrix;
 
-    // Skip the header line (%%MatrixMarket ...)
-    char line[256];
-    std::fgets(line, sizeof(line), f);
+    if (!f.is_open()) {
+        cerr << "Error: Could not open file " << name_file << "\n";
+        *size = 0;
+        return matrix;
+    }
+
+    string line;
+    int nodes = 0, cols = 0, edges = 0;
 
     // Skip comment lines (lines starting with '%')
-    while (std::fgets(line, sizeof(line), f)) {
-        if (line[0] != '%') break;
-    }
-
-    // Read the size line
-    long long nodes, cols, edges;
-    std::sscanf(line, "%lld %lld %lld", &nodes, &cols, &edges);
-    *size = nodes;
-    std::vector<std::vector<float>> matrix(nodes, std::vector<float>(nodes, std::numeric_limits<float>::infinity()));
-
-    // Read edges
-    for (long long i = 0; i < edges; i++) {
-        int src, dst;
-        float weight;
-        
-        if (fscanf(f, "%d %d %f", &src, &dst, &weight) != 3) {
-            printf("Error reading entry %d\n", i);
+    while (getline(f, line)) {
+        if (line.empty() || line[0] == '%') {
+            continue;
+        }
+        // Read the size line
+        stringstream ss(line);
+        if (ss >> nodes >> cols >> edges) {
             break;
         }
-        int u = src - 1;
-        int v = dst - 1;
-        matrix[u][v] = weight;
     }
-    fclose(f);
+
+    *size = nodes;
+    matrix.assign(nodes, vector<float>(nodes, numeric_limits<float>::infinity()));
+
+    // Read edges
+
+    int src, dst;
+    float weight;
+    int i = 0;
+    while (i < edges && f >> src >> dst >> weight) {
+        matrix[src - 1][dst - 1] =  weight;
+        i++;
+    }
+
+    if (i < edges) {
+        cerr << "Warning: File has " << edges << "edges, but only " << i << "were loaded";
+    }
+
     return matrix;
+}
+
+vector<tuple<int, int, float>>  convertToList(const string& name_file, int *size) {
+
+    ifstream f(name_file);
+    vector<tuple<int, int, float>> edge_list;
+
+    if (!f.is_open()) {
+        cerr << "Error: Could not open file " << name_file << "\n";
+        *size = 0;
+        return edge_list;
+    }
+
+    string line;
+    int nodes = 0, cols = 0, edges = 0;
+
+    // Skip comment lines (lines starting with '%')
+    while (getline(f, line)) {
+        if (line.empty() || line[0] == '%') {
+            continue;
+        }
+        // Read the size line
+        stringstream ss(line);
+        if (ss >> nodes >> cols >> edges) {
+            break;
+        }
+    }
+
+    *size = nodes;
+    edge_list.reserve(edges);
+
+    int src, dst;
+    float weight;
+    int i = 0;
+    while (i < edges && f >> src >> dst >> weight) {
+        edge_list.emplace_back(src - 1, dst -1, weight);
+        i++;
+    }
+
+    if (i < edges) {
+        cerr << "Warning: File has " << edges << "edges, but only " << i << "were loaded";
+    }
+    return edge_list;
 }
 
 vector<vector<float>> floydWarshall(const vector<vector<float>>& adjacency, int size){
@@ -61,13 +118,35 @@ vector<vector<float>> floydWarshall(const vector<vector<float>>& adjacency, int 
     return path;
 }
 
+vector<float> bellmanFord(const vector<tuple<int, int, float>>& edges, int V, int src) {
+    
+	vector<float> dist(V, numeric_limits<float>::infinity());
+    dist[src] = 0;
+	for (int i = 0; i < V; i++) {
+		for (const auto& [u, v, weight] : edges) {
+			if (dist[u] != numeric_limits<float>::infinity() && dist[u] + weight < dist[v]) {
+			    
+                // If this is the Vth relaxation, then there is
+                // a negative cycle
+                if(i == V - 1)
+                    return {-1};
+               
+                // Update shortest distance to node v
+                dist[v] = dist[u] + weight;
+            }
+		}
+	}
+
+    return dist;
+}
 
 int main() {
     const char* name_file = "graph.mtx";
     int size = 0;
 
-    std::vector<std::vector<float>> matrix = convertToMatrix(name_file, &size);
+    vector<vector<float>> matrix = convertToMatrix(name_file, &size);
     vector<vector<float>> path = floydWarshall(matrix, size);
 
+    cout << "done" << endl;
     return 0;
 }
