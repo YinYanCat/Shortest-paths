@@ -61,11 +61,11 @@ int main(int argc, char *argv[])
 
         // Experimentos Combinar(A,B): sparse conexo, sparse disconexo, dense conexo, dense disconexo
         // Experimento A: cambio de densidad
-        float edge_p = densityEdgeProbability(size/2, 0.10f);
+        float edge_p = densityEdgeProbability(size, 0.90f);
 
         // Experimento B: cambio grafo conexo o disconexo con subgrafos conexos del mismo tamaño
-        //vector<vector<float>> graph = connectedGraphAdjacency(size, edge_p);
-        vector<vector<float>> graph = concatGraphAdjacency(connectedGraphAdjacency(size/2, edge_p), connectedGraphAdjacency(size/2, edge_p), size/2, size/2);
+        vector<vector<float>> graph = connectedGraphAdjacency(size, edge_p);
+        //vector<vector<float>> graph = concatGraphAdjacency(connectedGraphAdjacency(size/2, edge_p), connectedGraphAdjacency(size/2, edge_p), size/2, size/2);
         vector<tuple<int,int,float>> edges = toGraphEdges(graph, size);
 
         // Run to compute elapsed time
