@@ -61,12 +61,12 @@ int main(int argc, char *argv[])
 
         // Experimentos Combinar(A,B): sparse conexo, sparse disconexo, dense conexo, dense disconexo
         // Experimento A: cambio de densidad
-        float edge_p = densityEdgeProbability(size, 0.90f);
+        float edge_p = densityEdgeProbability(size/2, 0.10f);
 
         // Experimento B: cambio grafo conexo o disconexo con subgrafos conexos del mismo tamaño
         //vector<vector<float>> graph = connectedGraphAdjacency(size, edge_p);
-        //vector<tuple<int,int,float>> edges = toGraphEdges(graph, size);
         vector<vector<float>> graph = concatGraphAdjacency(connectedGraphAdjacency(size/2, edge_p), connectedGraphAdjacency(size/2, edge_p), size/2, size/2);
+        vector<tuple<int,int,float>> edges = toGraphEdges(graph, size);
 
         // Run to compute elapsed time
         for (i = 0; i < runs; i++) {
@@ -74,8 +74,8 @@ int main(int argc, char *argv[])
             display_progress(++executed_runs, total_runs_additive);
 
             begin_time = std::chrono::high_resolution_clock::now();
-            floydWarshall(graph, size);
-            //baseAlgorithm(edges, size);
+            //floydWarshall(graph, size);
+            baseAlgorithm(edges, size);
             end_time = std::chrono::high_resolution_clock::now();
 
             elapsed_time = end_time - begin_time;
