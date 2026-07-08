@@ -8,10 +8,11 @@
 #include <sstream>
 #include <exception>
 #include <random>
+#include <algorithm>
 
 using namespace std;
 
-vector<vector<float>> convertToMatrix(const char * name_file, int *size) {
+vector<vector<float>> mtxToMatrix(const char * name_file, int *size) {
     ifstream f(name_file);
 
     vector<vector<float>> matrix;
@@ -53,7 +54,42 @@ vector<vector<float>> convertToMatrix(const char * name_file, int *size) {
     if (i < edges) {
         cerr << "Warning: File has " << edges << "edges, but only " << i << "were loaded";
     }
+    f.close();
+    return matrix;
+}
 
+vector<vector<float>> edgesToMatrix(const char * name_file, int *size) {
+    ifstream f(name_file);
+
+    vector<vector<float>> matrix;
+
+    if (!f.is_open()) {
+        cerr << "Error: Could not open file " << name_file << "\n";
+        *size = 0;
+        return matrix;
+    }
+
+    string line;
+    int nodes = 0, edges = 0;
+    int src, dst;
+    float weight;
+
+    while(f >> src >> dst >> weight) {
+        nodes = max({nodes, src, dst});
+        edges++;
+    }
+    nodes++;
+    *size = nodes;
+    matrix.assign(nodes, vector<float>(nodes, numeric_limits<float>::infinity()));
+
+    // Read edges
+    f.clear();
+    f.seekg(0, ios::beg);
+
+    while (f >> src >> dst >> weight) {
+        matrix[src][dst] =  weight;
+    }
+    f.close();
     return matrix;
 }
 
